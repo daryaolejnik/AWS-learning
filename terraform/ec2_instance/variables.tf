@@ -5,6 +5,9 @@ variable "secret_key" {
   description = "Secret key to AWS console"
 }
 
+variable "aws_region" {
+  description = "AWS Region for infrastructure"
+}
 variable "instance_name" {
   description = "Name of the instance to be created"
   default     = "awsbuilder-demo"
@@ -17,6 +20,10 @@ variable "instance_type" {
 variable "subnet_id" {
   description = "The VPC subnet the instance(s) will be created in"
   default     = "subnet-02a4260b7f2470c65"
+}
+
+variable "vpc_id" {
+  description = "The VPC id the instance(s) will be created in"
 }
 
 variable "ami_id" {
