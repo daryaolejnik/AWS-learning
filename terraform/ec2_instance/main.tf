@@ -46,15 +46,34 @@ resource "aws_key_pair" "ssh_key" {
 
   tags = var.default_tags
 }
+data "aws_ami" "amazon_linux_ami" {
+  owners      = var.amazon_linux_ami.owners
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = var.amazon_linux_ami.name
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = var.amazon_linux_ami.root_device_type
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = var.amazon_linux_ami.virtualization_type
+  }
+}
 
 module "ec2_instance" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "5.5.0"
 
-  ami                         = var.ec2_instance.ami_id
+  ami                         = data.aws_ami.amazon_linux_ami.image_id
   name                        = var.ec2_instance.name
   instance_type               = var.ec2_instance.instance_type
-  key_name                    = var.ec2_instance.key_name
+  key_name                    = aws_key_pair.ssh_key.key_name
   vpc_security_group_ids      = [module.security_group.security_group_id]
   subnet_id                   = module.vpc.public_subnets[0]
   associate_public_ip_address = true

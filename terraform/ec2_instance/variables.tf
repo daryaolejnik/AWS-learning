@@ -32,11 +32,18 @@ variable "security_group" {
   })
 }
 
+variable "amazon_linux_ami" {
+  type = object({
+    name                = list(string)
+    owners              = list(string)
+    root_device_type    = list(string)
+    virtualization_type = list(string)
+  })
+}
 variable "ec2_instance" {
   type = object({
     name          = string
     instance_type = string
-    ami_id        = string
     key_name      = string
   })
 }

@@ -1,11 +1,18 @@
 #====== AWS Variables =========
 aws_region = "us-east-1"
 
+#====== Ami Variables =========
+amazon_linux_ami = {
+  name                = ["al2023-ami-2023.*-x86_64"]
+  owners              = ["amazon"]
+  root_device_type    = ["ebs"]
+  virtualization_type = ["hvm"]
+}
+
 #====== Instance Variables =========
 ec2_instance = {
   name          = "test-instance"
   instance_type = "t2.micro"
-  ami_id        = "ami-0f34c5ae932e6f0e4"
   key_name      = "httpd"
 }
 
