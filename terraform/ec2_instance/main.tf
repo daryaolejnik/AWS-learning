@@ -3,45 +3,79 @@ provider "aws" {
   secret_key = var.secret_key
   region     = var.aws_region
 }
+
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "5.1.1"
+
+  name = var.vpc.name
+  cidr = var.vpc.cidr
+
+  azs             = var.vpc.azs
+  private_subnets = var.vpc.private_subnets
+  public_subnets  = var.vpc.public_subnets
+
+  enable_nat_gateway = true
+
+  tags = var.default_tags
+}
+
+module "security_group" {
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "5.1.0"
+
+  name        = var.security_group.name
+  description = var.security_group.description
+  vpc_id      = module.vpc.vpc_id
+
+  egress_rules        = var.security_group.egress_rules
+  ingress_cidr_blocks = var.security_group.ingress_cidr_blocks
+  ingress_rules       = var.security_group.ingress_rules
+
+  tags = var.default_tags
+}
+
 resource "tls_private_key" "rsa-4096" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
 resource "aws_key_pair" "ssh_key" {
-  key_name   = var.ami_key_pair_name
+  key_name   = var.ec2_instance.key_name
   public_key = tls_private_key.rsa-4096.public_key_openssh
-  tags       = var.default_tags
-}
 
-resource "aws_security_group" "public_security_group" {
-  name   = "ec2-sg"
-  vpc_id = var.vpc_id
-
-  ingress {
-    from_port        = 80
-    to_port          = 80
-    protocol         = "tcp"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "all"
-    cidr_blocks      = ["0.0.0.0/0"]
-    ipv6_cidr_blocks = ["::/0"]
-  }
   tags = var.default_tags
 }
 
-resource "aws_instance" "ec2_instance" {
-  ami             = var.ami_id
-  count           = var.number_of_instances
-  subnet_id       = var.subnet_id
-  security_groups = [aws_security_group.public_security_group.id]
-  instance_type   = var.instance_type
-  key_name        = var.ami_key_pair_name
-  user_data       = file("../ec2-user-data.sh")
-  tags            = var.default_tags
-}   
+module "ec2_instance" {
+  source  = "terraform-aws-modules/ec2-instance/aws"
+  version = "5.5.0"
+
+  ami                         = var.ec2_instance.ami_id
+  name                        = var.ec2_instance.name
+  instance_type               = var.ec2_instance.instance_type
+  key_name                    = var.ec2_instance.key_name
+  vpc_security_group_ids      = [module.security_group.security_group_id]
+  subnet_id                   = module.vpc.public_subnets[0]
+  associate_public_ip_address = true
+  user_data                   = file("../ec2-user-data.sh")
+
+  tags = var.default_tags
+
+  depends_on = [
+    module.security_group,
+    aws_key_pair.ssh_key
+  ]
+}
+
+resource "aws_eip" "elastic_ip_for_ec2" {
+  domain   = "vpc"
+  instance = module.ec2_instance.id
+
+  tags = var.default_tags
+}
+
+resource "aws_eip_association" "eip_assoc" {
+  instance_id   = module.ec2_instance.id
+  allocation_id = aws_eip.elastic_ip_for_ec2.id
+}
