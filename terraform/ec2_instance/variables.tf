@@ -1,43 +1,51 @@
 variable "access_key" {
   description = "Access key to AWS console"
+  sensitive   = true
 }
 variable "secret_key" {
   description = "Secret key to AWS console"
+  sensitive   = true
 }
 
 variable "aws_region" {
   description = "AWS Region for infrastructure"
 }
-variable "instance_name" {
-  description = "Name of the instance to be created"
-  default     = "awsbuilder-demo"
+
+variable "vpc" {
+  type = object({
+    name            = string
+    cidr            = string
+    azs             = list(string)
+    private_subnets = list(string)
+    public_subnets  = list(string)
+  })
 }
 
-variable "instance_type" {
-  default = "t2.micro"
+variable "security_group" {
+  type = object({
+    name        = string
+    description = string
+
+    egress_rules        = list(string)
+    ingress_cidr_blocks = list(string)
+    ingress_rules       = list(string)
+  })
 }
 
-variable "subnet_id" {
-  description = "The VPC subnet the instance(s) will be created in"
-  default     = "subnet-02a4260b7f2470c65"
+variable "amazon_linux_ami" {
+  type = object({
+    name                = list(string)
+    owners              = list(string)
+    root_device_type    = list(string)
+    virtualization_type = list(string)
+  })
 }
-
-variable "vpc_id" {
-  description = "The VPC id the instance(s) will be created in"
-}
-
-variable "ami_id" {
-  description = "The AMI to use, Amazon Linux 2023 AMI"
-  default     = "ami-0f34c5ae932e6f0e4"
-}
-
-variable "number_of_instances" {
-  description = "number of instances to be created"
-  default     = 1
-}
-
-variable "ami_key_pair_name" {
-  default = "httpd"
+variable "ec2_instance" {
+  type = object({
+    name          = string
+    instance_type = string
+    key_name      = string
+  })
 }
 
 variable "default_tags" {
