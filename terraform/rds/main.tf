@@ -1,3 +1,7 @@
+locals {
+  ssm_prefix = "/rds/${var.default_postgres.engine}"
+}
+
 resource "random_password" "master_password_postgres" {
   length  = 20
   special = false
@@ -72,7 +76,7 @@ resource "aws_db_instance" "default" {
 }
 
 resource "aws_ssm_parameter" "master_username_postgres" {
-  name  = "/rds/postgres/username"
+  name  = "${local.ssm_prefix}/username"
   type  = "SecureString"
   value = var.default_postgres.username
 
@@ -80,7 +84,7 @@ resource "aws_ssm_parameter" "master_username_postgres" {
 }
 
 resource "aws_ssm_parameter" "master_password_postgres" {
-  name  = "/rds/postgres/password"
+  name  = "${local.ssm_prefix}/password"
   type  = "SecureString"
   value = random_password.master_password_postgres.result
 
@@ -89,7 +93,7 @@ resource "aws_ssm_parameter" "master_password_postgres" {
 
 resource "aws_ssm_parameter" "postgres_endpoint" {
 
-  name  = "/rds/postgres/endpoint"
+  name  = "${local.ssm_prefix}/endpoint"
   value = aws_db_instance.default.endpoint
   type  = "String"
 
