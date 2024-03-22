@@ -9,15 +9,15 @@ variable "default_postgres" {
     username             = string
     parameter_group_name = string
     skip_final_snapshot  = bool
+    database_port        = number
   })
 }
 
 variable "security_group" {
   description = "Default parameter for rds postgres db security group"
   type = object({
-    name          = string
-    description   = string
-    database_port = number
+    name        = string
+    description = string
   })
 }
 

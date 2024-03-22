@@ -8,10 +8,10 @@ default_postgres = {
   username             = "postgres"
   parameter_group_name = "default.postgres13"
   skip_final_snapshot  = true
+  database_port        = 5432
 }
 
 security_group = {
-  name          = "postgresql-sg"
-  description   = "Default PostgreSQL Security Group"
-  database_port = 5432
+  name        = "postgresql-sg"
+  description = "Default PostgreSQL Security Group"
 }

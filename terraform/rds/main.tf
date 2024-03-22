@@ -30,8 +30,8 @@ resource "aws_security_group" "postgres_sg" {
   vpc_id = data.aws_vpc.default.id
 
   ingress {
-    from_port = var.security_group.database_port
-    to_port   = var.security_group.database_port
+    from_port = var.default_postgres.database_port
+    to_port   = var.default_postgres.database_port
     protocol  = "tcp"
     cidr_blocks = [
       data.aws_vpc.default.cidr_block
@@ -66,14 +66,14 @@ resource "aws_db_instance" "default" {
   skip_final_snapshot    = var.default_postgres.skip_final_snapshot
   db_subnet_group_name   = aws_db_subnet_group.default.name
   vpc_security_group_ids = [aws_security_group.postgres_sg.id]
-  port                   = 5432
+  port                   = var.default_postgres.database_port
 
   tags = var.default_tags
 }
 
 resource "aws_ssm_parameter" "master_username_postgres" {
   name  = "/rds/postgres/username"
-  type  = "String"
+  type  = "SecureString"
   value = var.default_postgres.username
 
   tags = var.default_tags
