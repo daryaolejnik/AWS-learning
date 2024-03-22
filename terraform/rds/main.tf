@@ -60,8 +60,8 @@ resource "aws_db_instance" "default" {
   engine                 = var.default_postgres.engine
   engine_version         = var.default_postgres.engine_version
   instance_class         = var.default_postgres.instance_class
-  username               = var.default_postgres.username
-  password               = random_password.master_password_postgres.result
+  username               = aws_ssm_parameter.master_username_postgres.value
+  password               = aws_ssm_parameter.master_password_postgres.value
   parameter_group_name   = var.default_postgres.parameter_group_name
   skip_final_snapshot    = var.default_postgres.skip_final_snapshot
   db_subnet_group_name   = aws_db_subnet_group.default.name
@@ -74,7 +74,7 @@ resource "aws_db_instance" "default" {
 resource "aws_ssm_parameter" "master_username_postgres" {
   name  = "/rds/postgres/username"
   type  = "String"
-  value = aws_db_instance.default.username
+  value = var.default_postgres.username
 
   tags = var.default_tags
 }
@@ -82,7 +82,7 @@ resource "aws_ssm_parameter" "master_username_postgres" {
 resource "aws_ssm_parameter" "master_password_postgres" {
   name  = "/rds/postgres/password"
   type  = "SecureString"
-  value = aws_db_instance.default.password
+  value = random_password.master_password_postgres.result
 
   tags = var.default_tags
 }
