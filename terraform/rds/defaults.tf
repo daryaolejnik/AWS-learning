@@ -11,4 +11,11 @@ terraform {
 provider "aws" {
   region  = "us-east-1"
   profile = "learning"
+  default_tags {
+    tags = {
+      Environment = "PostgreSQL"
+      Owner       = "doliinyk"
+      Project     = "learning"
+    }
+  }
 }

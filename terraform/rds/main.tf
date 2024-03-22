@@ -1,44 +1,40 @@
 locals {
-  ssm_prefix = "/rds/${var.default_postgres.engine}"
+  ssm_prefix = "/rds/${var.engine}"
 }
 
-resource "random_password" "master_password_postgres" {
+resource "random_password" "password" {
   length  = 20
   special = false
 }
 
-data "aws_vpc" "default" {
+data "aws_vpc" "vpc" {
   default = true
 }
 
-data "aws_subnets" "default" {
+data "aws_subnets" "subnet" {
   filter {
     name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
+    values = [data.aws_vpc.vpc.id]
   }
 }
 
-resource "aws_db_subnet_group" "default" {
+resource "aws_db_subnet_group" "db_subnet_group" {
   name       = "main"
-  subnet_ids = data.aws_subnets.default.ids
-
-  tags = {
-    Name = "My DB subnet group"
-  }
+  subnet_ids = data.aws_subnets.subnet.ids
 }
 
-resource "aws_security_group" "postgres_sg" {
-  name        = var.security_group.name
-  description = var.security_group.description
+resource "aws_security_group" "security_group" {
+  name        = "${var.engine}-sg"
+  description = "The Security Group for ${var.engine} database"
 
-  vpc_id = data.aws_vpc.default.id
+  vpc_id = data.aws_vpc.vpc.id
 
   ingress {
-    from_port = var.default_postgres.database_port
-    to_port   = var.default_postgres.database_port
+    from_port = 5432
+    to_port   = 5432
     protocol  = "tcp"
     cidr_blocks = [
-      data.aws_vpc.default.cidr_block
+      data.aws_vpc.vpc.cidr_block
     ]
   }
 
@@ -54,48 +50,38 @@ resource "aws_security_group" "postgres_sg" {
   lifecycle {
     create_before_destroy = true
   }
-
-  tags = var.default_tags
 }
 
-resource "aws_db_instance" "default" {
-  allocated_storage      = var.default_postgres.storage
-  identifier             = var.default_postgres.identifier
-  engine                 = var.default_postgres.engine
-  engine_version         = var.default_postgres.engine_version
-  instance_class         = var.default_postgres.instance_class
-  username               = aws_ssm_parameter.master_username_postgres.value
-  password               = aws_ssm_parameter.master_password_postgres.value
-  parameter_group_name   = var.default_postgres.parameter_group_name
-  skip_final_snapshot    = var.default_postgres.skip_final_snapshot
-  db_subnet_group_name   = aws_db_subnet_group.default.name
-  vpc_security_group_ids = [aws_security_group.postgres_sg.id]
-  port                   = var.default_postgres.database_port
-
-  tags = var.default_tags
+resource "aws_db_instance" "db_instance" {
+  allocated_storage      = var.allocated_storage
+  identifier             = var.identifier
+  engine                 = var.engine
+  engine_version         = var.engine_version
+  instance_class         = var.instance_class
+  username               = aws_ssm_parameter.username.value
+  password               = aws_ssm_parameter.password.value
+  parameter_group_name   = var.parameter_group_name
+  skip_final_snapshot    = var.skip_final_snapshot
+  db_subnet_group_name   = aws_db_subnet_group.db_subnet_group.name
+  vpc_security_group_ids = [aws_security_group.security_group.id]
+  port                   = 5432
 }
 
-resource "aws_ssm_parameter" "master_username_postgres" {
+resource "aws_ssm_parameter" "username" {
   name  = "${local.ssm_prefix}/username"
   type  = "SecureString"
-  value = var.default_postgres.username
-
-  tags = var.default_tags
+  value = var.username
 }
 
-resource "aws_ssm_parameter" "master_password_postgres" {
+resource "aws_ssm_parameter" "password" {
   name  = "${local.ssm_prefix}/password"
   type  = "SecureString"
-  value = random_password.master_password_postgres.result
-
-  tags = var.default_tags
+  value = random_password.password.result
 }
 
-resource "aws_ssm_parameter" "postgres_endpoint" {
+resource "aws_ssm_parameter" "endpoint" {
 
   name  = "${local.ssm_prefix}/endpoint"
-  value = aws_db_instance.default.endpoint
+  value = aws_db_instance.db_instance.endpoint
   type  = "String"
-
-  tags = var.default_tags
 }
